@@ -175,21 +175,49 @@
 
   <div class="fakeArScreen" id="fakeArScreen">
     <video class="fakeArVideo" id="fakeArVideo" autoplay muted playsinline></video>
+  <div class="fakeArScreen" id="fakeArScreen">
+    
+    <video class="fakeArVideo" id="fakeArVideo" autoplay muted playsinline></video>
+    
     <div class="fakeArViewerWrap">
       <model-viewer
         id="fakeArModel"
         src=""
         camera-controls
-        auto-rotate
-        rotation-per-second="15deg"
+        
+        /* ✅ ALLOW ZOOM & PAN */
+        min-camera-orbit="auto 0deg auto" 
+        max-camera-orbit="auto 85deg auto"
+        min-field-of-view="10deg"
+        max-field-of-view="45deg"
+        interpolation-decay="200"
+        
+        /* ✅ PREVENT VIEWING FROM UNDER THE TABLE */
         shadow-intensity="0"
         exposure="1.2"
-        camera-orbit="0deg 75deg 2m"
-        field-of-view="30deg"
-        disable-zoom
+        
         style="width:100%; height:100%; background:transparent;"
-      ></model-viewer>
+      >
+        <div slot="poster" style="display:none;"></div>
+      </model-viewer>
     </div>
+
+    <div class="fakeArOverlay">
+      <div class="fakeArTopBar">
+        <div class="fakeArTag">📷 Compatibility Mode</div>
+        <button class="fakeArClose" onclick="closeFallbackAR()">Close ✖</button>
+      </div>
+      
+      <div class="fakeArBottomBar">
+        <div>
+          <div class="fakeArTitle" id="fakeArDishTitle">Dish Name</div>
+          <div class="fakeArSub" style="color:#f7c948;">
+            ☝️ 1 Finger: Rotate &nbsp; | &nbsp; ✌️ 2 Fingers: Move &nbsp; | &nbsp; 🤏 Pinch: Zoom
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
     <div class="fakeArOverlay">
       <div class="fakeArTopBar">
         <div class="fakeArTag">📷 Compatibility Mode</div>
