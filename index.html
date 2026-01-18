@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>MenuVista: Smart AR Menu</title>
+
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+
+  <style>
+    /* ================= GLOBAL STYLES ================= */
+    *{margin:0;padding:0;box-sizing:border-box;font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;}
+    body{background:#07070c;color:#fff; -webkit-tap-highlight-color: transparent;}
+
+    /* Top Bar */
+    .top{
+      position:sticky; top:0; z-index:20;
+      background:rgba(8,8,12,.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-bottom:1px solid rgba(255,255,255,.08);
+      padding:14px 16px;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .mvLogo{font-weight:900; letter-spacing:.5px; font-size:16px;}
+    .mvLogo span{color:#f7c948;}
+    .restName{font-size:13px; opacity:.82; text-align:right; line-height:1.2;}
+
+    /* Hero */
+    .hero{padding:18px 16px 12px;}
+    .heroCard{
+      border-radius:22px; padding:18px;
+      background:linear-gradient(135deg, rgba(247,201,72,.20), rgba(255,255,255,.04));
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow: 0 20px 50px rgba(0,0,0,.55);
+    }
+    .heroTitle{font-size:22px;font-weight:900;margin-bottom:6px;}
+    .heroSub{opacity:.78; line-height:1.45; font-size:14px;}
+    .pillRow{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;}
+    .pill{
+      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10);
+      padding:6px 10px; border-radius:999px; font-size:12px; opacity:.95;
+    }
+
+    /* Tabs */
+    .tabsWrap{padding:10px 16px 6px; display:flex; gap:10px; overflow:auto; scrollbar-width:none;}
+    .tabsWrap::-webkit-scrollbar{display:none;}
+    .tab{
+      padding:10px 14px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.06);
+      font-weight:800; cursor:pointer; white-space:nowrap; color:#fff; transition:.2s;
+    }
+    .tab.active{background:#f7c948;color:#000;border-color:#f7c948;}
+
+    /* Menu Grid */
+    .menuWrap{padding:10px 16px 80px;}
+    .sectionTitle{display:flex; justify-content:space-between; align-items:center; margin:6px 0 10px;}
+    .sectionTitle h2{font-size:16px; font-weight:900;}
+    
+    .grid{display:grid; grid-template-columns:1fr; gap:16px;}
+    @media(min-width:700px){ .grid{grid-template-columns:repeat(2,1fr);} }
+    @media(min-width:1000px){ .grid{grid-template-columns:repeat(3,1fr);} }
+
+    /* Card */
+    .card{
+      border-radius:22px; background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08); overflow:hidden;
+      transition:.25s; position:relative;
+    }
+    .viewerBox{
+      height:240px; background:radial-gradient(circle, rgba(247,201,72,.10), rgba(255,255,255,.03));
+      border-bottom:1px solid rgba(255,255,255,.08); position:relative;
+    }
+    model-viewer{width:100%; height:100%;}
+
+    .badge3d{
+      position:absolute; top:12px; left:12px;
+      background:rgba(0,0,0,.6); backdrop-filter:blur(4px);
+      border:1px solid rgba(255,255,255,.15);
+      padding:6px 10px; border-radius:999px;
+      font-size:11px; font-weight:800; color:#fff; z-index:2;
+    }
+
+    .content{padding:14px; display:flex; flex-direction:column; gap:6px;}
+    .name{font-weight:900; font-size:18px;}
+    .desc{opacity:.7; font-size:13px; line-height:1.4;}
+    .row{display:flex; justify-content:space-between; align-items:center; margin-top:4px;}
+    .price{color:#f7c948; font-weight:900; font-size:20px;}
+
+    .btn{
+      width:100%; padding:14px; border-radius:16px; margin-top:8px;
+      border:0; background:#f7c948; color:#000;
+      font-weight:900; cursor:pointer; font-size:14px;
+      display:flex; align-items:center; justify-content:center; gap:8px;
+    }
+    .btn:active{transform:scale(0.98);}
+
+    /* ================= FALLBACK AR (CAMERA OVERLAY) ================= */
+    .fakeArScreen{
+      position:fixed; inset:0; z-index:9999;
+      background:#000; display:none; /* Hidden by default */
+    }
+    /* 1. Camera Video Layer */
+    .fakeArVideo{
+      position:absolute; inset:0; width:100%; height:100%;
+      object-fit:cover; z-index:1;
+    }
+    /* 2. 3D Model Layer */
+    .fakeArViewerWrap{
+      position:absolute; inset:0; z-index:2; pointer-events:auto;
+    }
+    /* 3. UI Overlay Layer */
+    .fakeArOverlay{
+      position:absolute; inset:0; z-index:3;
+      display:flex; flex-direction:column; justify-content:space-between;
+      padding:16px; pointer-events:none; /* Let touches pass through to model */
+    }
+    .fakeArTopBar, .fakeArBottomBar{
+      pointer-events:auto; /* Re-enable clicks for buttons */
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    
+    .fakeArTag{
+      padding:8px 12px; border-radius:999px; background:rgba(0,0,0,.6);
+      backdrop-filter:blur(10px); font-weight:800; font-size:12px; border:1px solid rgba(255,255,255,.2);
+    }
+    .fakeArClose{
+      padding:10px 14px; border-radius:999px; background:rgba(255,50,50,.85);
+      color:#fff; border:0; font-weight:800; cursor:pointer; font-size:13px;
+    }
+    .fakeArBottomBar{
+      background:rgba(20,20,30,.85); backdrop-filter:blur(12px);
+      padding:14px; border-radius:18px; border:1px solid rgba(255,255,255,.1);
+    }
+    .fakeArTitle{font-weight:900; font-size:15px;}
+    .fakeArSub{opacity:.7; font-size:12px;}
+
+    /* Loading Spinner */
+    .loader{
+      position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,.8);
+      display:none; align-items:center; justify-content:center; flex-direction:column;
+    }
+    .spinner{
+      width:40px; height:40px; border:4px solid rgba(255,255,255,.1);
+      border-top-color:#f7c948; border-radius:50%; animation:spin 1s linear infinite;
+    }
+    @keyframes spin{to{transform:rotate(360deg);}}
+  </style>
+</head>
+<body>
+
+  <div class="top">
+    <div class="mvLogo">Menu<span>Vista</span></div>
+    <div class="restName">Saffron Biryani<br/><span style="opacity:.6;">Hyderabad</span></div>
+  </div>
+
+  <div class="hero">
+    <div class="heroCard">
+      <div class="heroTitle">Experience Food in AR 🍛</div>
+      <div class="heroSub">See it on your table before you order.</div>
+      <div class="pillRow">
+        <div class="pill">✨ 3D Preview</div>
+        <div class="pill">📱 Smart AR</div>
+        <div class="pill">📸 Works on All Phones</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabsWrap" id="tabs"></div>
+
+  <div class="menuWrap">
+    <div class="sectionTitle">
+      <h2 id="catTitle">Starters</h2>
+    </div>
+    <div class="grid" id="menuGrid"></div>
+  </div>
+
+  <div class="fakeArScreen" id="fakeArScreen">
+    <video class="fakeArVideo" id="fakeArVideo" autoplay muted playsinline></video>
+    <div class="fakeArViewerWrap">
+      <model-viewer
+        id="fakeArModel"
+        src=""
+        camera-controls
+        auto-rotate
+        rotation-per-second="15deg"
+        shadow-intensity="0"
+        exposure="1.2"
+        camera-orbit="0deg 75deg 2m"
+        field-of-view="30deg"
+        disable-zoom
+        style="width:100%; height:100%; background:transparent;"
+      ></model-viewer>
+    </div>
+    <div class="fakeArOverlay">
+      <div class="fakeArTopBar">
+        <div class="fakeArTag">📷 Compatibility Mode</div>
+        <button class="fakeArClose" onclick="closeFallbackAR()">Close ✖</button>
+      </div>
+      <div class="fakeArBottomBar">
+        <div>
+          <div class="fakeArTitle" id="fakeArDishTitle">Dish Name</div>
+          <div class="fakeArSub">Pinch to resize • Drag to rotate</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="loader" id="loader">
+    <div class="spinner"></div>
+    <div style="margin-top:15px; font-weight:bold;">Loading AR...</div>
+  </div>
+
+  <script>
+    // ================= CONFIGURATION =================
+    const MODEL_DEFAULT = "shaami.glb"; 
+
+    const menuData = {
+      "Starters": [
+        { id: "s1", name: "Shaami Kebab", desc: "Melt in mouth texture.", price: "₹149", model: MODEL_DEFAULT },
+        { id: "s2", name: "Chicken 65",   desc: "Spicy deep fried chicken.", price: "₹199", model: MODEL_DEFAULT }
+      ],
+      "Main Course": [
+        { id: "m1", name: "Dum Biryani",  desc: "Classic Hyderabadi Dum.", price: "₹249", model: MODEL_DEFAULT },
+        { id: "m2", name: "Mandi",        desc: "Arabian rice platter.",   price: "₹349", model: MODEL_DEFAULT }
+      ],
+      "Desserts": [
+        { id: "d1", name: "Qubani Ka Meetha", desc: "Apricot dessert.",   price: "₹120", model: MODEL_DEFAULT }
+      ]
+    };
+
+    let activeCategory = "Starters";
+
+    // ================= INITIAL RENDER =================
+    const tabsEl = document.getElementById("tabs");
+    const gridEl = document.getElementById("menuGrid");
+    const catTitle = document.getElementById("catTitle");
+
+    function renderApp() {
+      tabsEl.innerHTML = "";
+      Object.keys(menuData).forEach(cat => {
+        const btn = document.createElement("button");
+        btn.className = `tab ${cat === activeCategory ? 'active' : ''}`;
+        btn.innerText = cat;
+        btn.onclick = () => { activeCategory = cat; renderApp(); };
+        tabsEl.appendChild(btn);
+      });
+
+      catTitle.innerText = activeCategory;
+      gridEl.innerHTML = "";
+      menuData[activeCategory].forEach(item => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="viewerBox">
+            <div class="badge3d">3D PREVIEW</div>
+            
+            <model-viewer
+              id="mv-${item.id}"
+              src="${item.model}"
+              ar
+              ar-modes="webxr quick-look" 
+              ar-scale="auto"
+              camera-controls
+              auto-rotate
+              shadow-intensity="1"
+              alt="${item.name}"
+            ></model-viewer>
+          </div>
+          <div class="content">
+            <div class="name">${item.name}</div>
+            <div class="desc">${item.desc}</div>
+            <div class="row">
+              <div class="price">${item.price}</div>
+            </div>
+            <button class="btn" onclick="openSmartAR('${item.id}')">
+              📱 View in AR
+            </button>
+          </div>
+        `;
+        gridEl.appendChild(card);
+      });
+    }
+
+    // ================= 🧠 SMART AR LOGIC (UPDATED) =================
+
+    async function openSmartAR(itemId) {
+      const item = findDishById(itemId);
+      if(!item) return;
+
+      const viewer = document.getElementById(`mv-${itemId}`);
+      const loader = document.getElementById("loader");
+
+      // 1. Check if the browser supports reliable WebXR (Android) or QuickLook (iOS)
+      // We manually check 'canActivateAR' BUT we rely on the stricter ar-modes we set above.
+      const supportsNativeAR = viewer.canActivateAR;
+
+      if (supportsNativeAR) {
+        console.log("✅ Trying Native AR...");
+        try {
+          viewer.activateAR();
+          return; 
+        } catch (e) {
+          console.warn("Native AR crashed, switching to fallback...");
+        }
+      }
+
+      // 2. If we reach here, Native AR is impossible or failed.
+      // Force the Camera Overlay (Fake AR)
+      console.log("⚠️ Native AR not supported/failed. Opening Camera Overlay.");
+      
+      loader.style.display = "flex";
+      setTimeout(() => {
+        startFallbackAR(item);
+        loader.style.display = "none";
+      }, 500);
+    }
+
+    // ================= 📷 FALLBACK CAMERA LOGIC =================
+
+    let currentStream = null;
+
+    async function startFallbackAR(item) {
+      const fakeScreen = document.getElementById("fakeArScreen");
+      const fakeVideo = document.getElementById("fakeArVideo");
+      const fakeModel = document.getElementById("fakeArModel");
+      const fakeTitle = document.getElementById("fakeArDishTitle");
+
+      fakeModel.src = item.model;
+      fakeTitle.innerText = item.name;
+      fakeScreen.style.display = "block";
+
+      if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+        alert("⚠️ Camera Mode requires HTTPS security.");
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' },
+          audio: false
+        });
+        
+        currentStream = stream;
+        fakeVideo.srcObject = stream;
+        fakeVideo.setAttribute("playsinline", true); 
+        fakeVideo.play();
+
+      } catch (err) {
+        console.error("Camera Error:", err);
+        fakeScreen.style.display = "none";
+        alert("Could not open camera. Check permissions.");
+      }
+    }
+
+    function closeFallbackAR() {
+      const fakeScreen = document.getElementById("fakeArScreen");
+      const fakeVideo = document.getElementById("fakeArVideo");
+      fakeScreen.style.display = "none";
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+      }
+      fakeVideo.srcObject = null;
+    }
+
+    function findDishById(id) {
+      for (const cat in menuData) {
+        const found = menuData[cat].find(i => i.id === id);
+        if (found) return found;
+      }
+      return null;
+    }
+
+    renderApp();
+  </script>
+</body>
+</html>
