@@ -129,9 +129,10 @@
     .fakeArBottomBar{
       background:rgba(20,20,30,.85); backdrop-filter:blur(12px);
       padding:14px; border-radius:18px; border:1px solid rgba(255,255,255,.1);
+      width: 100%;
     }
     .fakeArTitle{font-weight:900; font-size:15px;}
-    .fakeArSub{opacity:.7; font-size:12px;}
+    .fakeArSub{opacity:.9; font-size:12px; color:#f7c948; margin-top:2px;}
 
     /* Loading Spinner */
     .loader{
@@ -175,9 +176,6 @@
 
   <div class="fakeArScreen" id="fakeArScreen">
     <video class="fakeArVideo" id="fakeArVideo" autoplay muted playsinline></video>
-  <div class="fakeArScreen" id="fakeArScreen">
-    
-    <video class="fakeArVideo" id="fakeArVideo" autoplay muted playsinline></video>
     
     <div class="fakeArViewerWrap">
       <model-viewer
@@ -185,21 +183,19 @@
         src=""
         camera-controls
         
-        /* ✅ ALLOW ZOOM & PAN */
+        /* ✅ ENABLE ZOOM & PAN */
         min-camera-orbit="auto 0deg auto" 
-        max-camera-orbit="auto 85deg auto"
-        min-field-of-view="10deg"
-        max-field-of-view="45deg"
+        max-camera-orbit="auto 85deg auto" /* Prevents looking under the plate */
+        min-field-of-view="20deg" 
+        max-field-of-view="50deg"
         interpolation-decay="200"
-        
-        /* ✅ PREVENT VIEWING FROM UNDER THE TABLE */
+
+        /* Hides shadow for overlay */
         shadow-intensity="0"
         exposure="1.2"
         
         style="width:100%; height:100%; background:transparent;"
-      >
-        <div slot="poster" style="display:none;"></div>
-      </model-viewer>
+      ></model-viewer>
     </div>
 
     <div class="fakeArOverlay">
@@ -207,26 +203,12 @@
         <div class="fakeArTag">📷 Compatibility Mode</div>
         <button class="fakeArClose" onclick="closeFallbackAR()">Close ✖</button>
       </div>
-      
       <div class="fakeArBottomBar">
         <div>
           <div class="fakeArTitle" id="fakeArDishTitle">Dish Name</div>
-          <div class="fakeArSub" style="color:#f7c948;">
-            ☝️ 1 Finger: Rotate &nbsp; | &nbsp; ✌️ 2 Fingers: Move &nbsp; | &nbsp; 🤏 Pinch: Zoom
+          <div class="fakeArSub">
+            ☝️ 1 Finger: Rotate &nbsp;|&nbsp; ✌️ 2 Fingers: Move &nbsp;|&nbsp; 🤏 Pinch: Zoom
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
-    <div class="fakeArOverlay">
-      <div class="fakeArTopBar">
-        <div class="fakeArTag">📷 Compatibility Mode</div>
-        <button class="fakeArClose" onclick="closeFallbackAR()">Close ✖</button>
-      </div>
-      <div class="fakeArBottomBar">
-        <div>
-          <div class="fakeArTitle" id="fakeArDishTitle">Dish Name</div>
-          <div class="fakeArSub">Pinch to resize • Drag to rotate</div>
         </div>
       </div>
     </div>
@@ -239,6 +221,7 @@
 
   <script>
     // ================= CONFIGURATION =================
+    // ⚠️ REPLACE these filenames with your actual .glb files!
     const MODEL_DEFAULT = "shaami.glb"; 
 
     const menuData = {
@@ -263,6 +246,7 @@
     const catTitle = document.getElementById("catTitle");
 
     function renderApp() {
+      // 1. Render Tabs
       tabsEl.innerHTML = "";
       Object.keys(menuData).forEach(cat => {
         const btn = document.createElement("button");
@@ -272,6 +256,7 @@
         tabsEl.appendChild(btn);
       });
 
+      // 2. Render Grid
       catTitle.innerText = activeCategory;
       gridEl.innerHTML = "";
       menuData[activeCategory].forEach(item => {
@@ -285,8 +270,7 @@
               id="mv-${item.id}"
               src="${item.model}"
               ar
-              ar-modes="webxr quick-look" 
-              ar-scale="auto"
+              ar-modes="webxr quick-look"
               camera-controls
               auto-rotate
               shadow-intensity="1"
@@ -308,7 +292,7 @@
       });
     }
 
-    // ================= 🧠 SMART AR LOGIC (UPDATED) =================
+    // ================= 🧠 SMART AR LOGIC =================
 
     async function openSmartAR(itemId) {
       const item = findDishById(itemId);
@@ -317,25 +301,23 @@
       const viewer = document.getElementById(`mv-${itemId}`);
       const loader = document.getElementById("loader");
 
-      // 1. Check if the browser supports reliable WebXR (Android) or QuickLook (iOS)
-      // We manually check 'canActivateAR' BUT we rely on the stricter ar-modes we set above.
+      // STEP 1: Check if Real AR (WebXR/QuickLook) is supported
       const supportsNativeAR = viewer.canActivateAR;
 
       if (supportsNativeAR) {
-        console.log("✅ Trying Native AR...");
+        console.log("✅ Native AR Supported. Launching...");
         try {
           viewer.activateAR();
-          return; 
+          return; // Success! Exit function.
         } catch (e) {
-          console.warn("Native AR crashed, switching to fallback...");
+          console.warn("Native AR failed. Trying fallback...");
         }
       }
 
-      // 2. If we reach here, Native AR is impossible or failed.
-      // Force the Camera Overlay (Fake AR)
-      console.log("⚠️ Native AR not supported/failed. Opening Camera Overlay.");
-      
+      // STEP 2: If Native AR fails, Launch Camera Overlay (Fallback)
+      console.log("⚠️ Switching to Camera Overlay Mode");
       loader.style.display = "flex";
+      
       setTimeout(() => {
         startFallbackAR(item);
         loader.style.display = "none";
@@ -352,37 +334,45 @@
       const fakeModel = document.getElementById("fakeArModel");
       const fakeTitle = document.getElementById("fakeArDishTitle");
 
+      // 1. Setup UI
       fakeModel.src = item.model;
       fakeTitle.innerText = item.name;
       fakeScreen.style.display = "block";
 
+      // 2. Check HTTPS (Required for Camera)
       if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-        alert("⚠️ Camera Mode requires HTTPS security.");
+        alert("⚠️ Camera Mode requires HTTPS security.\nPlease host this on Vercel/Netlify.");
         return;
       }
 
+      // 3. Start Camera
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment' },
+          video: { facingMode: 'environment' }, // Rear Camera
           audio: false
         });
         
         currentStream = stream;
         fakeVideo.srcObject = stream;
+        
+        // Critical for iOS Safari:
         fakeVideo.setAttribute("playsinline", true); 
         fakeVideo.play();
 
       } catch (err) {
         console.error("Camera Error:", err);
         fakeScreen.style.display = "none";
-        alert("Could not open camera. Check permissions.");
+        alert("Could not open camera. Please ensure you allowed camera permissions.");
       }
     }
 
     function closeFallbackAR() {
       const fakeScreen = document.getElementById("fakeArScreen");
       const fakeVideo = document.getElementById("fakeArVideo");
+
       fakeScreen.style.display = "none";
+
+      // Stop Camera Stream
       if (currentStream) {
         currentStream.getTracks().forEach(track => track.stop());
         currentStream = null;
@@ -398,6 +388,7 @@
       return null;
     }
 
+    // Start App
     renderApp();
   </script>
 </body>
