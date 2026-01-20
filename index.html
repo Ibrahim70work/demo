@@ -3,199 +3,594 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>MenuVista: Smart AR Menu</title>
+  <title>Shah Ghouse × MenuVista — 3D + AR Demo</title>
 
+  <meta name="description" content="Shah Ghouse × MenuVista AR Demo. Explore 5 signature dishes in 3D and view them in AR." />
+
+  <!-- model-viewer -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
   <style>
-    /* ================= GLOBAL STYLES ================= */
-    *{margin:0;padding:0;box-sizing:border-box;font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;}
-    body{background:#07070c;color:#fff; -webkit-tap-highlight-color: transparent;}
+    :root{
+      --bg:#ffffff;
+      --text:#0f172a;
+      --sub:#475569;
+      --line:rgba(15, 23, 42, 0.12);
+      --shadow: 0 12px 32px rgba(2,6,23,0.08);
 
-    /* Top Bar */
-    .top{
-      position:sticky; top:0; z-index:20;
-      background:rgba(8,8,12,.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      border-bottom:1px solid rgba(255,255,255,.08);
-      padding:14px 16px;
-      display:flex; justify-content:space-between; align-items:center;
-    }
-    .mvLogo{font-weight:900; letter-spacing:.5px; font-size:16px;}
-    .mvLogo span{color:#f7c948;}
-    .restName{font-size:13px; opacity:.82; text-align:right; line-height:1.2;}
+      /* Shah Ghouse inspired green */
+      --green:#16a34a;
+      --green2:#15803d;
 
-    /* Hero */
-    .hero{padding:18px 16px 12px;}
-    .heroCard{
-      border-radius:22px; padding:18px;
-      background:linear-gradient(135deg, rgba(247,201,72,.20), rgba(255,255,255,.04));
-      border:1px solid rgba(255,255,255,.08);
-      box-shadow: 0 20px 50px rgba(0,0,0,.55);
-    }
-    .heroTitle{font-size:22px;font-weight:900;margin-bottom:6px;}
-    .heroSub{opacity:.78; line-height:1.45; font-size:14px;}
-    .pillRow{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;}
-    .pill{
-      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10);
-      padding:6px 10px; border-radius:999px; font-size:12px; opacity:.95;
+      --radius:22px;
     }
 
-    /* Tabs */
-    .tabsWrap{padding:10px 16px 6px; display:flex; gap:10px; overflow:auto; scrollbar-width:none;}
-    .tabsWrap::-webkit-scrollbar{display:none;}
-    .tab{
-      padding:10px 14px; border-radius:999px;
-      border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.06);
-      font-weight:800; cursor:pointer; white-space:nowrap; color:#fff; transition:.2s;
+    *{ box-sizing:border-box; margin:0; padding:0; }
+    html{ scroll-behavior:smooth; }
+    body{
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      -webkit-tap-highlight-color: transparent;
+      line-height: 1.4;
     }
-    .tab.active{background:#f7c948;color:#000;border-color:#f7c948;}
+    a{ color:inherit; text-decoration:none; }
 
-    /* Menu Grid */
-    .menuWrap{padding:10px 16px 80px;}
-    .sectionTitle{display:flex; justify-content:space-between; align-items:center; margin:6px 0 10px;}
-    .sectionTitle h2{font-size:16px; font-weight:900;}
-    
-    .grid{display:grid; grid-template-columns:1fr; gap:16px;}
-    @media(min-width:700px){ .grid{grid-template-columns:repeat(2,1fr);} }
-    @media(min-width:1000px){ .grid{grid-template-columns:repeat(3,1fr);} }
-
-    /* Card */
-    .card{
-      border-radius:22px; background:rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.08); overflow:hidden;
-      transition:.25s; position:relative;
-    }
-    .viewerBox{
-      height:240px; background:radial-gradient(circle, rgba(247,201,72,.10), rgba(255,255,255,.03));
-      border-bottom:1px solid rgba(255,255,255,.08); position:relative;
-    }
-    model-viewer{width:100%; height:100%;}
-
-    .badge3d{
-      position:absolute; top:12px; left:12px;
-      background:rgba(0,0,0,.6); backdrop-filter:blur(4px);
-      border:1px solid rgba(255,255,255,.15);
-      padding:6px 10px; border-radius:999px;
-      font-size:11px; font-weight:800; color:#fff; z-index:2;
+    .container{
+      width:min(1120px, calc(100% - 40px));
+      margin:0 auto;
     }
 
-    .content{padding:14px; display:flex; flex-direction:column; gap:6px;}
-    .name{font-weight:900; font-size:18px;}
-    .desc{opacity:.7; font-size:13px; line-height:1.4;}
-    .row{display:flex; justify-content:space-between; align-items:center; margin-top:4px;}
-    .price{color:#f7c948; font-weight:900; font-size:20px;}
+    /* NAV */
+    .nav{
+      position: sticky;
+      top:0;
+      z-index: 999;
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav-inner{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 0;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+      font-weight: 900;
+      letter-spacing: -0.3px;
+    }
+
+    .brandMark{
+      width: 42px;
+      height: 42px;
+      border-radius: 16px;
+      display:grid;
+      place-items:center;
+      background: rgba(22,163,74,0.10);
+      border: 1px solid rgba(22,163,74,0.22);
+      font-weight: 900;
+      font-family: Poppins, Inter, sans-serif;
+    }
+
+    .brandTxt{
+      display:flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+    .brandTxt .t1{
+      font-family: Poppins, Inter, sans-serif;
+      font-size: 15px;
+      font-weight: 900;
+    }
+    .brandTxt .t2{
+      font-size: 12px;
+      color: var(--sub);
+      font-weight: 700;
+    }
+
+    .navActions{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+    }
 
     .btn{
-      width:100%; padding:14px; border-radius:16px; margin-top:8px;
-      border:0; background:#f7c948; color:#000;
-      font-weight:900; cursor:pointer; font-size:14px;
-      display:flex; align-items:center; justify-content:center; gap:8px;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      transition: 0.18s ease;
+      user-select:none;
     }
-    .btn:active{transform:scale(0.98);}
+    .btn:hover{
+      transform: translateY(-1px);
+      box-shadow: var(--shadow);
+      border-color: rgba(22,163,74,0.22);
+    }
+    .btn-primary{
+      background: linear-gradient(135deg, var(--green), var(--green2));
+      border-color: rgba(22,163,74,0.35);
+      color: #fff;
+      box-shadow: 0 16px 34px rgba(22,163,74,0.20);
+    }
+    .btn-ghost{
+      background: rgba(15,23,42,0.02);
+    }
+
+    /* HERO */
+    .hero{
+      padding: 46px 0 18px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before{
+      content:"";
+      position:absolute;
+      inset: -140px -170px auto auto;
+      width: 560px;
+      height: 560px;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.45;
+      background: radial-gradient(circle, rgba(22,163,74,0.55), rgba(22,163,74,0));
+      pointer-events:none;
+    }
+
+    .hero-grid{
+      display:grid;
+      grid-template-columns: 1.12fr 0.88fr;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(22,163,74,0.22);
+      background: rgba(22,163,74,0.08);
+      font-weight: 800;
+      font-size: 13px;
+      color: rgba(15,23,42,0.88);
+    }
+
+    .hero h1{
+      font-family: Poppins, Inter, sans-serif;
+      margin: 12px 0 10px;
+      font-size: clamp(28px, 3.4vw, 46px);
+      letter-spacing: -1px;
+      line-height: 1.05;
+    }
+
+    .hero p{
+      margin: 0;
+      color: var(--sub);
+      font-size: 15px;
+      max-width: 60ch;
+    }
+
+    .heroActions{
+      margin-top: 16px;
+      display:flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .heroCard{
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(15,23,42,0.03), rgba(15,23,42,0.01));
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    .mini{
+      font-size: 13px;
+      color: var(--sub);
+      font-weight: 800;
+    }
+
+    .stats{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .stat{
+      background:#fff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px;
+    }
+    .stat .k{
+      font-weight: 900;
+      font-size: 16px;
+      letter-spacing: -0.3px;
+    }
+    .stat .d{
+      margin-top: 4px;
+      color: var(--sub);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    section{ padding: 36px 0; }
+
+    .section-title{
+      display:flex;
+      align-items:flex-end;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .section-title h2{
+      margin: 0;
+      font-family: Poppins, Inter, sans-serif;
+      letter-spacing: -0.5px;
+      font-size: 22px;
+    }
+    .section-title p{
+      margin: 0;
+      color: var(--sub);
+      font-size: 14px;
+      max-width: 72ch;
+    }
+
+    /* DISH GRID */
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .dish{
+      background:#fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow:hidden;
+      box-shadow: var(--shadow);
+      transition: 0.18s ease;
+      position:relative;
+    }
+    .dish:hover{
+      transform: translateY(-2px);
+      border-color: rgba(22,163,74,0.30);
+      box-shadow: 0 18px 46px rgba(22,163,74,0.12);
+    }
+
+    .dish-top{
+      padding: 14px 14px 0;
+      display:flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items:flex-start;
+    }
+
+    .tag{
+      display:inline-flex;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-weight: 900;
+      font-size: 12px;
+      border: 1px solid rgba(22,163,74,0.22);
+      background: rgba(22,163,74,0.08);
+      color: rgba(15,23,42,0.90);
+      white-space: nowrap;
+    }
+
+    .dish h3{
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: -0.3px;
+    }
+    .dish .subline{
+      margin-top: 4px;
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .viewer{
+      padding: 12px 14px 0;
+    }
+
+    model-viewer{
+      width: 100%;
+      height: 280px;
+      border-radius: 18px;
+      border: 1px dashed rgba(15,23,42,0.18);
+      background: linear-gradient(180deg, rgba(15,23,42,0.03), rgba(15,23,42,0.01));
+      overflow:hidden;
+    }
+
+    .dish-actions{
+      padding: 12px 14px 14px;
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn-wide{
+      flex: 1;
+      justify-content:center;
+      min-width: 140px;
+    }
+
+    /* HOW TO */
+    .howbox{
+      border: 1px solid rgba(22,163,74,0.24);
+      background: linear-gradient(135deg, rgba(22,163,74,0.10), rgba(15,23,42,0.02));
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    .howgrid{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .howstep{
+      background:#fff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+    }
+    .no{
+      width: 42px;
+      height: 42px;
+      border-radius: 16px;
+      display:grid;
+      place-items:center;
+      font-weight: 900;
+      background: rgba(22,163,74,0.10);
+      border: 1px solid rgba(22,163,74,0.20);
+      margin-bottom: 8px;
+    }
+    .howstep p{
+      margin: 0;
+      color: var(--sub);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* FOOTER */
+    footer{
+      border-top: 1px solid var(--line);
+      background: rgba(15,23,42,0.02);
+      padding: 22px 0;
+      color: var(--sub);
+      font-size: 13px;
+    }
+    .foot{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
 
     /* ================= FALLBACK AR (CAMERA OVERLAY) ================= */
     .fakeArScreen{
       position:fixed; inset:0; z-index:9999;
-      background:#000; display:none; /* Hidden by default */
+      background:#000; display:none;
     }
-    /* 1. Camera Video Layer */
     .fakeArVideo{
       position:absolute; inset:0; width:100%; height:100%;
       object-fit:cover; z-index:1;
     }
-    /* 2. 3D Model Layer */
     .fakeArViewerWrap{
       position:absolute; inset:0; z-index:2; pointer-events:auto;
     }
-    /* 3. UI Overlay Layer */
     .fakeArOverlay{
       position:absolute; inset:0; z-index:3;
       display:flex; flex-direction:column; justify-content:space-between;
-      padding:16px; pointer-events:none; /* Let touches pass through to model */
+      padding:16px; pointer-events:none;
     }
     .fakeArTopBar, .fakeArBottomBar{
-      pointer-events:auto; /* Re-enable clicks for buttons */
+      pointer-events:auto;
       display:flex; align-items:center; justify-content:space-between;
     }
-    
     .fakeArTag{
       padding:8px 12px; border-radius:999px; background:rgba(0,0,0,.6);
-      backdrop-filter:blur(10px); font-weight:800; font-size:12px; border:1px solid rgba(255,255,255,.2);
+      backdrop-filter:blur(10px); font-weight:900; font-size:12px;
+      border:1px solid rgba(255,255,255,.2); color:#fff;
     }
     .fakeArClose{
       padding:10px 14px; border-radius:999px; background:rgba(255,50,50,.85);
-      color:#fff; border:0; font-weight:800; cursor:pointer; font-size:13px;
+      color:#fff; border:0; font-weight:900; cursor:pointer; font-size:13px;
     }
     .fakeArBottomBar{
       background:rgba(20,20,30,.85); backdrop-filter:blur(12px);
       padding:14px; border-radius:18px; border:1px solid rgba(255,255,255,.1);
       width: 100%;
     }
-    .fakeArTitle{font-weight:900; font-size:15px;}
-    .fakeArSub{opacity:.9; font-size:12px; color:#f7c948; margin-top:2px;}
+    .fakeArTitle{font-weight:900; font-size:15px; color:#fff;}
+    .fakeArSub{opacity:.95; font-size:12px; color:#d1d5db; margin-top:2px;}
 
-    /* Loading Spinner */
+    /* Loader */
     .loader{
-      position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,.8);
+      position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,.75);
       display:none; align-items:center; justify-content:center; flex-direction:column;
+      color:#fff;
     }
     .spinner{
-      width:40px; height:40px; border:4px solid rgba(255,255,255,.1);
-      border-top-color:#f7c948; border-radius:50%; animation:spin 1s linear infinite;
+      width:40px; height:40px;
+      border:4px solid rgba(255,255,255,.12);
+      border-top-color: var(--green);
+      border-radius:50%;
+      animation:spin 1s linear infinite;
     }
     @keyframes spin{to{transform:rotate(360deg);}}
+
+
+    /* Responsive */
+    @media (max-width: 920px){
+      .hero-grid{ grid-template-columns: 1fr; }
+      .grid{ grid-template-columns: 1fr; }
+      .howgrid{ grid-template-columns: 1fr; }
+    }
   </style>
 </head>
+
 <body>
 
-  <div class="top">
-    <div class="mvLogo">Menu<span>Vista</span></div>
-    <div class="restName">Saffron Biryani<br/><span style="opacity:.6;">Hyderabad</span></div>
-  </div>
+  <!-- NAV -->
+  <div class="nav" id="top">
+    <div class="container">
+      <div class="nav-inner">
+        <div class="brand">
+          <div class="brandMark">SG</div>
+          <div class="brandTxt">
+            <div class="t1">Shah Ghouse × MenuVista</div>
+            <div class="t2">5 Signature Dishes • 3D + Smart AR</div>
+          </div>
+        </div>
 
-  <div class="hero">
-    <div class="heroCard">
-      <div class="heroTitle">Experience Food in AR 🍛</div>
-      <div class="heroSub">See it on your table before you order.</div>
-      <div class="pillRow">
-        <div class="pill">✨ 3D Preview</div>
-        <div class="pill">📱 Smart AR</div>
-        <div class="pill">📸 Works on All Phones</div>
+        <div class="navActions">
+          <a class="btn" href="#dishes">View Dishes</a>
+          <a class="btn btn-primary" href="#howto">How to Use</a>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="tabsWrap" id="tabs"></div>
+  <!-- HERO -->
+  <div class="hero">
+    <div class="container">
+      <div class="hero-grid">
 
-  <div class="menuWrap">
-    <div class="sectionTitle">
-      <h2 id="catTitle">Starters</h2>
+        <div>
+          <div class="pill">✨ No App • QR Based • Smart AR</div>
+          <h1>Experience Shah Ghouse on your table — in 3D + AR.</h1>
+          <p>
+            This is a pilot demo built with MenuVista. Preview dishes in 3D,
+            then tap <b>View in AR</b>. If your device doesn’t support native AR, MenuVista automatically opens
+            <b>Compatibility Mode</b> (camera overlay experience).
+          </p>
+
+          <div class="heroActions">
+            <a class="btn btn-primary" href="#dishes">🚀 Start AR Demo</a>
+            <a class="btn btn-ghost" href="#howto">📱 Steps</a>
+          </div>
+        </div>
+
+        <div class="heroCard">
+          <div class="mini">✅ What customers experience</div>
+          <div class="stats">
+            <div class="stat">
+              <div class="k">3D Preview</div>
+              <div class="d">Rotate + zoom instantly</div>
+            </div>
+            <div class="stat">
+              <div class="k">Smart AR</div>
+              <div class="d">Auto device detect</div>
+            </div>
+            <div class="stat">
+              <div class="k">Compatibility Mode</div>
+              <div class="d">Works on all phones</div>
+            </div>
+            <div class="stat">
+              <div class="k">Premium Experience</div>
+              <div class="d">Modern restaurant feel</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
-    <div class="grid" id="menuGrid"></div>
   </div>
 
+  <!-- DISHES -->
+  <section id="dishes">
+    <div class="container">
+      <div class="section-title">
+        <div>
+          <h2>5 Signature AR Dishes</h2>
+          <p>Only selected signature dishes are shown in AR for maximum impact.</p>
+        </div>
+      </div>
+
+      <div class="grid" id="dishGrid"></div>
+    </div>
+  </section>
+
+  <!-- HOW TO -->
+  <section id="howto">
+    <div class="container">
+      <div class="howbox">
+        <div class="section-title" style="margin-bottom:0;">
+          <div>
+            <h2>How to use AR (Customer Guide)</h2>
+            <p>Tap any dish → press View in AR → allow camera permission → place on table.</p>
+          </div>
+        </div>
+
+        <div class="howgrid">
+          <div class="howstep">
+            <div class="no">01</div>
+            <p><b>Preview</b> the dish in 3D by rotating & zooming.</p>
+          </div>
+
+          <div class="howstep">
+            <div class="no">02</div>
+            <p>Tap <b>View in AR</b>. Native AR opens if supported.</p>
+          </div>
+
+          <div class="howstep">
+            <div class="no">03</div>
+            <p>If AR isn’t supported, <b>Compatibility Mode</b> opens automatically.</p>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+          <a class="btn btn-primary" href="#dishes">✨ Try AR Now</a>
+          <a class="btn" href="#top">⬆ Back to top</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <div class="foot">
+        <div>© <span id="year"></span> MenuVista Demo • Shah Ghouse Pilot</div>
+        <div style="font-weight:800;">Built with 3D + Smart AR • No app required</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- FALLBACK AR SCREEN -->
   <div class="fakeArScreen" id="fakeArScreen">
     <video class="fakeArVideo" id="fakeArVideo" autoplay muted playsinline></video>
-    
+
     <div class="fakeArViewerWrap">
       <model-viewer
         id="fakeArModel"
         src=""
         camera-controls
-        
-        /* ✅ ENABLE ZOOM & PAN */
-        min-camera-orbit="auto 0deg auto" 
-        max-camera-orbit="auto 85deg auto" /* Prevents looking under the plate */
-        min-field-of-view="20deg" 
+        min-camera-orbit="auto 0deg auto"
+        max-camera-orbit="auto 85deg auto"
+        min-field-of-view="20deg"
         max-field-of-view="50deg"
         interpolation-decay="200"
-
-        /* Hides shadow for overlay */
         shadow-intensity="0"
         exposure="1.2"
-        
-        style="width:100%; height:100%; background:transparent;"
-      ></model-viewer>
+        style="width:100%; height:100%; background:transparent;">
+      </model-viewer>
     </div>
 
     <div class="fakeArOverlay">
@@ -203,69 +598,105 @@
         <div class="fakeArTag">📷 Compatibility Mode</div>
         <button class="fakeArClose" onclick="closeFallbackAR()">Close ✖</button>
       </div>
+
       <div class="fakeArBottomBar">
-        <div>
-          <div class="fakeArTitle" id="fakeArDishTitle">Dish Name</div>
-          <div class="fakeArSub">
-            ☝️ 1 Finger: Rotate &nbsp;|&nbsp; ✌️ 2 Fingers: Move &nbsp;|&nbsp; 🤏 Pinch: Zoom
-          </div>
-        </div>
-      </div>
+  <div>
+    <div class="fakeArTitle" id="fakeArDishTitle">Dish Name</div>
+    <div class="fakeArSub">
+      ☝️ Rotate • ✌️ Move • 🤏 Zoom
     </div>
   </div>
 
+  <button
+    class="fakeArSnapBtn"
+    onclick="snapAndShare()"
+    style="
+      margin-left:10px;
+      padding:12px 14px;
+      border-radius:16px;
+      border:0;
+      background:linear-gradient(135deg,#16a34a,#15803d);
+      color:#fff;
+      font-weight:900;
+      cursor:pointer;
+      white-space:nowrap;
+    "
+  >
+    📸 Snap & Share
+  </button>
+</div>
+
+    </div>
+  </div>
+
+  <!-- LOADER -->
   <div class="loader" id="loader">
     <div class="spinner"></div>
-    <div style="margin-top:15px; font-weight:bold;">Loading AR...</div>
+    <div style="margin-top:14px; font-weight:900;">Loading AR...</div>
   </div>
 
   <script>
-    // ================= CONFIGURATION =================
-    // ⚠️ REPLACE these filenames with your actual .glb files!
-    const MODEL_DEFAULT = "shaami.glb"; 
+    document.getElementById("year").textContent = new Date().getFullYear();
 
-    const menuData = {
-      "Starters": [
-        { id: "s1", name: "Shaami Kebab", desc: "Melt in mouth texture.", price: "₹149", model: MODEL_DEFAULT },
-        { id: "s2", name: "Chicken 65",   desc: "Spicy deep fried chicken.", price: "₹199", model: MODEL_DEFAULT }
-      ],
-      "Main Course": [
-        { id: "m1", name: "Dum Biryani",  desc: "Classic Hyderabadi Dum.", price: "₹249", model: MODEL_DEFAULT },
-        { id: "m2", name: "Mandi",        desc: "Arabian rice platter.",   price: "₹349", model: MODEL_DEFAULT }
-      ],
-      "Desserts": [
-        { id: "d1", name: "Qubani Ka Meetha", desc: "Apricot dessert.",   price: "₹120", model: MODEL_DEFAULT }
-      ]
-    };
+    // ✅ 5 Dish Data (GLB Only)
+    const dishes = [
+      {
+        id: "mandi",
+        name: "Signature Mandi Platter (Family Size)",
+        tag: "Best Seller",
+        subline: "AR Recommended • Premium Showcase",
+        model: "shaamii_b.glb"
+      },
+      {
+        id: "biryani",
+        name: "Royal Mutton Biryani (Premium Edition)",
+        tag: "Must Try",
+        subline: "Signature Main Course",
+        model: "shaamii_b.glb"
+      },
+      {
+        id: "grill",
+        name: "Chef’s Special Mixed Grill Platter",
+        tag: "Special",
+        subline: "Grills • Premium Plate",
+        model:"shaamii_b.glb"
+      },
+      {
+        id: "starter",
+        name: "Signature Starter Platter",
+        tag: "Trending",
+        subline: "Perfect for sharing",
+        model: "shaamii_b.glb"
+      },
+      {
+        id: "dessert",
+        name: "Dessert of the Day (Special Showcase)",
+        tag: "Limited",
+        subline: "Sweet Finish • AR Showcase",
+        model: "shaamii_b.glb"
+      }
+    ];
 
-    let activeCategory = "Starters";
+    // ✅ Render Dish Cards
+    const grid = document.getElementById("dishGrid");
 
-    // ================= INITIAL RENDER =================
-    const tabsEl = document.getElementById("tabs");
-    const gridEl = document.getElementById("menuGrid");
-    const catTitle = document.getElementById("catTitle");
+    function renderDishes(){
+      grid.innerHTML = "";
 
-    function renderApp() {
-      // 1. Render Tabs
-      tabsEl.innerHTML = "";
-      Object.keys(menuData).forEach(cat => {
-        const btn = document.createElement("button");
-        btn.className = `tab ${cat === activeCategory ? 'active' : ''}`;
-        btn.innerText = cat;
-        btn.onclick = () => { activeCategory = cat; renderApp(); };
-        tabsEl.appendChild(btn);
-      });
-
-      // 2. Render Grid
-      catTitle.innerText = activeCategory;
-      gridEl.innerHTML = "";
-      menuData[activeCategory].forEach(item => {
+      dishes.forEach(item => {
         const card = document.createElement("div");
-        card.className = "card";
+        card.className = "dish";
+
         card.innerHTML = `
-          <div class="viewerBox">
-            <div class="badge3d">3D PREVIEW</div>
-            
+          <div class="dish-top">
+            <div>
+              <h3>${item.name}</h3>
+              <div class="subline">${item.subline}</div>
+            </div>
+            <span class="tag">${item.tag}</span>
+          </div>
+
+          <div class="viewer">
             <model-viewer
               id="mv-${item.id}"
               src="${item.model}"
@@ -274,122 +705,315 @@
               camera-controls
               auto-rotate
               shadow-intensity="1"
-              alt="${item.name}"
-            ></model-viewer>
+              alt="${item.name}">
+            </model-viewer>
           </div>
-          <div class="content">
-            <div class="name">${item.name}</div>
-            <div class="desc">${item.desc}</div>
-            <div class="row">
-              <div class="price">${item.price}</div>
-            </div>
-            <button class="btn" onclick="openSmartAR('${item.id}')">
-              📱 View in AR
+
+          <div class="dish-actions">
+            <button class="btn btn-primary btn-wide" onclick="openSmartAR('${item.id}')">
+              ✨ View in AR
             </button>
+            <a class="btn btn-wide btn-ghost" href="#howto">
+              📱 Help
+            </a>
           </div>
         `;
-        gridEl.appendChild(card);
+
+        grid.appendChild(card);
       });
     }
 
-    // ================= 🧠 SMART AR LOGIC =================
+    renderDishes();
 
+    // ================= 🧠 SMART AR LOGIC =================
     async function openSmartAR(itemId) {
-      const item = findDishById(itemId);
+      const item = dishes.find(d => d.id === itemId);
       if(!item) return;
 
       const viewer = document.getElementById(`mv-${itemId}`);
       const loader = document.getElementById("loader");
 
-      // STEP 1: Check if Real AR (WebXR/QuickLook) is supported
-      const supportsNativeAR = viewer.canActivateAR;
+      // STEP 1: Try Native AR (if supported)
+      const supportsNativeAR = viewer?.canActivateAR;
 
       if (supportsNativeAR) {
-        console.log("✅ Native AR Supported. Launching...");
         try {
           viewer.activateAR();
-          return; // Success! Exit function.
+          return;
         } catch (e) {
-          console.warn("Native AR failed. Trying fallback...");
+          console.warn("Native AR failed. Switching to fallback...", e);
         }
       }
 
-      // STEP 2: If Native AR fails, Launch Camera Overlay (Fallback)
-      console.log("⚠️ Switching to Camera Overlay Mode");
+      // STEP 2: Fallback (Camera Overlay)
       loader.style.display = "flex";
-      
+
       setTimeout(() => {
         startFallbackAR(item);
         loader.style.display = "none";
-      }, 500);
+      }, 450);
     }
 
     // ================= 📷 FALLBACK CAMERA LOGIC =================
-
     let currentStream = null;
 
     async function startFallbackAR(item) {
       const fakeScreen = document.getElementById("fakeArScreen");
-      const fakeVideo = document.getElementById("fakeArVideo");
-      const fakeModel = document.getElementById("fakeArModel");
-      const fakeTitle = document.getElementById("fakeArDishTitle");
+      const fakeVideo  = document.getElementById("fakeArVideo");
+      const fakeModel  = document.getElementById("fakeArModel");
+      const fakeTitle  = document.getElementById("fakeArDishTitle");
 
-      // 1. Setup UI
+      // UI setup
       fakeModel.src = item.model;
       fakeTitle.innerText = item.name;
       fakeScreen.style.display = "block";
 
-      // 2. Check HTTPS (Required for Camera)
-      if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-        alert("⚠️ Camera Mode requires HTTPS security.\nPlease host this on Vercel/Netlify.");
+      // HTTPS check
+      if (location.protocol !== "https:" && location.hostname !== "localhost") {
+        alert("⚠️ Compatibility Mode requires HTTPS.\nHost on Netlify/Vercel for camera access.");
         return;
       }
 
-      // 3. Start Camera
+      // Start camera
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment' }, // Rear Camera
+          video: { facingMode: "environment" },
           audio: false
         });
-        
+
         currentStream = stream;
         fakeVideo.srcObject = stream;
-        
-        // Critical for iOS Safari:
-        fakeVideo.setAttribute("playsinline", true); 
-        fakeVideo.play();
+        fakeVideo.setAttribute("playsinline", true);
+        await fakeVideo.play();
 
       } catch (err) {
         console.error("Camera Error:", err);
         fakeScreen.style.display = "none";
-        alert("Could not open camera. Please ensure you allowed camera permissions.");
+        alert("Camera permission denied or unavailable. Please allow camera access.");
       }
     }
 
     function closeFallbackAR() {
       const fakeScreen = document.getElementById("fakeArScreen");
-      const fakeVideo = document.getElementById("fakeArVideo");
+      const fakeVideo  = document.getElementById("fakeArVideo");
 
       fakeScreen.style.display = "none";
 
-      // Stop Camera Stream
       if (currentStream) {
         currentStream.getTracks().forEach(track => track.stop());
         currentStream = null;
       }
       fakeVideo.srcObject = null;
     }
+    // ================= SNAP & SHARE SYSTEM =================
+let lastSnapBlob = null;
 
-    function findDishById(id) {
-      for (const cat in menuData) {
-        const found = menuData[cat].find(i => i.id === id);
-        if (found) return found;
-      }
-      return null;
+function closeSnapModal(){
+  document.getElementById("snapModal").style.display = "none";
+}
+
+function openSnapModal(imgUrl){
+  const modal = document.getElementById("snapModal");
+  const preview = document.getElementById("snapPreview");
+  preview.src = imgUrl;
+  modal.style.display = "flex";
+}
+
+async function snapAndShare(){
+  // ✅ Capture from fallback camera overlay screen
+  const video = document.getElementById("fakeArVideo");
+  const dishName = document.getElementById("fakeArDishTitle")?.innerText || "AR Dish";
+
+  // ✅ Branding (make it dynamic later for every restaurant)
+  const restaurantName = "Shah Ghouse";
+  const tagline = "3D + AR Menu Experience";
+  const poweredBy = "Powered by MenuVista";
+
+  if(!video || video.readyState < 2){
+    alert("Camera not ready yet. Please wait 1 second and try again.");
+    return;
+  }
+
+  // ✅ Create poster canvas
+  const canvas = document.createElement("canvas");
+  const w = 1080;
+  const h = 1920;
+  canvas.width = w;
+  canvas.height = h;
+
+  const ctx = canvas.getContext("2d");
+
+  // Draw video frame as background (story size)
+  ctx.drawImage(video, 0, 0, w, h);
+
+  // Dark gradient overlay for readability
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, "rgba(0,0,0,0.55)");
+  grad.addColorStop(0.35, "rgba(0,0,0,0.20)");
+  grad.addColorStop(1, "rgba(0,0,0,0.55)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+
+  // Top bar (restaurant name)
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  ctx.font = "900 64px Inter, Arial";
+  ctx.fillText(restaurantName, 60, 120);
+
+  // Small tagline under restaurant name
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.font = "800 36px Inter, Arial";
+  ctx.fillText(tagline, 60, 175);
+
+  // Dish name badge
+  ctx.fillStyle = "rgba(22,163,74,0.95)";
+  roundRect(ctx, 60, 240, 820, 90, 40);
+  ctx.fill();
+
+  ctx.fillStyle = "#fff";
+  ctx.font = "900 42px Inter, Arial";
+  ctx.fillText("✨ " + dishName, 90, 302);
+
+  // Bottom branding
+  ctx.fillStyle = "rgba(255,255,255,0.88)";
+  ctx.font = "900 40px Inter, Arial";
+  ctx.fillText(poweredBy, 60, h - 90);
+
+  // Export PNG Blob
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png", 1.0));
+  lastSnapBlob = blob;
+
+  const imgUrl = URL.createObjectURL(blob);
+  openSnapModal(imgUrl);
+}
+
+// helper for rounded rectangles
+function roundRect(ctx, x, y, width, height, radius){
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + width, y, x + width, y + height, radius);
+  ctx.arcTo(x + width, y + height, x, y + height, radius);
+  ctx.arcTo(x, y + height, x, y, radius);
+  ctx.arcTo(x, y, x + width, y, radius);
+  ctx.closePath();
+}
+
+async function shareSnap(){
+  if(!lastSnapBlob){
+    alert("No snap found. Please capture again.");
+    return;
+  }
+
+  const file = new File([lastSnapBlob], "menuvista-ar-snap.png", { type: "image/png" });
+
+  // ✅ Native share support (mobile)
+  if(navigator.canShare && navigator.canShare({ files: [file] })){
+    try{
+      await navigator.share({
+        title: "MenuVista AR",
+        text: "Check this AR food experience 🔥",
+        files: [file]
+      });
+    } catch(e){
+      console.warn("Share cancelled or failed:", e);
     }
+    return;
+  }
 
-    // Start App
-    renderApp();
+  // ❌ If share not supported, fallback to download
+  downloadSnap();
+}
+
+function downloadSnap(){
+  if(!lastSnapBlob){
+    alert("No snap found. Please capture again.");
+    return;
+  }
+  const url = URL.createObjectURL(lastSnapBlob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "menuvista-ar-snap.png";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
   </script>
+
+<!-- SNAP PREVIEW MODAL -->
+<div id="snapModal" style="
+  position:fixed; inset:0; z-index:12000;
+  background:rgba(0,0,0,.75);
+  display:none;
+  align-items:center; justify-content:center;
+  padding:18px;
+">
+  <div style="
+    width:min(420px, 100%);
+    background:#fff;
+    border-radius:22px;
+    overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,.35);
+  ">
+    <div style="
+      padding:14px 16px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      border-bottom:1px solid rgba(15,23,42,.12);
+      font-weight:900;
+    ">
+      <div>✨ Snap & Share</div>
+      <button onclick="closeSnapModal()" style="
+        border:1px solid rgba(15,23,42,.12);
+        background:#fff;
+        width:42px; height:42px;
+        border-radius:14px;
+        font-weight:900;
+        cursor:pointer;
+      ">✕</button>
+    </div>
+
+    <div style="padding:14px;">
+      <img id="snapPreview" alt="Snap Preview" style="
+        width:100%;
+        border-radius:18px;
+        border:1px solid rgba(15,23,42,.12);
+        display:block;
+      "/>
+
+      <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
+        <button onclick="shareSnap()" style="
+          flex:1;
+          padding:12px 14px;
+          border-radius:16px;
+          border:0;
+          background:linear-gradient(135deg,#16a34a,#15803d);
+          color:#fff;
+          font-weight:900;
+          cursor:pointer;
+        ">
+          📤 Share
+        </button>
+
+        <button onclick="downloadSnap()" style="
+          flex:1;
+          padding:12px 14px;
+          border-radius:16px;
+          border:1px solid rgba(15,23,42,.12);
+          background:#fff;
+          font-weight:900;
+          cursor:pointer;
+        ">
+          ⬇️ Download
+        </button>
+      </div>
+
+      <p style="margin:10px 0 0; font-size:12px; color:#475569; font-weight:700;">
+        Tip: Share to Instagram Story / WhatsApp Status for the best impact.
+      </p>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
